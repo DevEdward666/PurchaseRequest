@@ -7649,11 +7649,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Hospital\\HospitalInventory_server\\DeliveryRoomWatcher\\DeliveryRoomWatcher.csproj",
+      "projectUniqueName": "D:\\Hospital\\Purchase_Request\\DeliveryRoomWatcher\\DeliveryRoomWatcher.csproj",
       "projectName": "DeliveryRoomWatcher",
-      "projectPath": "D:\\Hospital\\HospitalInventory_server\\DeliveryRoomWatcher\\DeliveryRoomWatcher.csproj",
+      "projectPath": "D:\\Hospital\\Purchase_Request\\DeliveryRoomWatcher\\DeliveryRoomWatcher.csproj",
       "packagesPath": "C:\\Users\\TUO-Edward\\.nuget\\packages\\",
-      "outputPath": "D:\\Hospital\\HospitalInventory_server\\DeliveryRoomWatcher\\obj\\",
+      "outputPath": "D:\\Hospital\\Purchase_Request\\DeliveryRoomWatcher\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\TUO-Edward\\AppData\\Roaming\\NuGet\\NuGet.Config",
