@@ -25,15 +25,15 @@ namespace DeliveryRoomWatcher
 
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddCors(options =>
-            //{
-            //    options.AddPolicy(name: MyAllowSpecificOrigins,
-            //                      builder =>
-            //                      {
-            //                          builder.WithOrigins("http://localhost:4000").AllowAnyMethod().AllowAnyHeader();
-            //                      });
-            //});
-            services.AddCors();
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: MyAllowSpecificOrigins,
+                                  builder =>
+                                  {
+                                      builder.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+                                  });
+            });
+            //services.AddCors();
             services.InstallServicesInAssembly(Configuration);
             services.AddSignalR();
         }
@@ -47,22 +47,22 @@ namespace DeliveryRoomWatcher
             app.UseCors(builder => builder
                   .AllowAnyHeader()
                   .AllowAnyMethod()
-                  .SetIsOriginAllowed((host) => true)
+                  .SetIsOriginAllowed(origin => true)
                   .AllowCredentials()
               );
 
 
-            var swaggerConfig = new SwaggerConfig();
-            Configuration.GetSection(nameof(SwaggerConfig)).Bind(swaggerConfig);
-            app.UseSwagger(option =>
-            {
-                option.RouteTemplate = swaggerConfig.JsonRoute;
-            });
+            //var swaggerConfig = new SwaggerConfig();
+            //Configuration.GetSection(nameof(SwaggerConfig)).Bind(swaggerConfig);
+            //app.UseSwagger(option =>
+            //{
+            //    option.RouteTemplate = swaggerConfig.JsonRoute;
+            //});
 
-            app.UseSwaggerUI(option =>
-            {
-                option.SwaggerEndpoint(swaggerConfig.UIEndpoint, swaggerConfig.Description);
-            });
+            //app.UseSwaggerUI(option =>
+            //{
+            //    option.SwaggerEndpoint(swaggerConfig.UIEndpoint, swaggerConfig.Description);
+            //});
             app.UseStaticFiles(new StaticFileOptions
             {
                 FileProvider = new PhysicalFileProvider(Path.Combine(env.ContentRootPath, "Resources/Images")),
@@ -87,10 +87,11 @@ namespace DeliveryRoomWatcher
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MessageHub>("/message");
-                endpoints.MapHub<NotifyHub>("/notify");
+                endpoints.MapHub<MessageHub>("message");
+                endpoints.MapHub<NotifyHub>("notify");
                 endpoints.MapControllers();
             });
+
 
         }
 
