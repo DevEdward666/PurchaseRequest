@@ -11,7 +11,7 @@ namespace DeliveryRoomWatcher.Models
         public string deptcode { get; set; }
         public string deptname { get; set; }
         public string sectioncode { get; set; }
-        public string reqdate { get; set; }
+        public DateTime reqdate { get; set; }
         public string reqby { get; set; }
         public string apprbycode { get; set; }
         public string apprbyname { get; set; }

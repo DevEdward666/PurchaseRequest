@@ -30,6 +30,7 @@ namespace DeliveryRoomWatcher.Models
         public string reqremarks { get; set; }
         public string encodedby { get; set; }
         public List<mdlRequestdtls> lisrequesttdtls { get; set; }
+        public List<mdlRequestSuppliers> lisrequesttsuppliers { get; set; }
     }
     public class mdlRequestdtls
     {
@@ -40,10 +41,16 @@ namespace DeliveryRoomWatcher.Models
         public string sectioncode { get; set; }
         public string stockcode { get; set; }
         public string stockdesc { get; set; }
-        public string prqty { get; set; }
+        public int prqty { get; set; }
         public string unitdesc { get; set; }
-        public string prprice { get; set; }
+        public float averagecost { get; set; }
         public string itemtrantype { get; set; }
         public string itemremarks { get; set; }
+    }
+    public class mdlRequestSuppliers
+    {
+        public string prno { get; set; }
+        public string value { get; set; }
+        public string label { get; set; }
     }
 }

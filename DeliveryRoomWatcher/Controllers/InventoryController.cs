@@ -66,6 +66,13 @@ namespace DeliveryRoomWatcher.Controllers
         {
             return Ok(_inventory.getdepartmentList());
         }
+             
+        [HttpPost]
+        [Route("api/inventory/getsectionlist")]
+        public ActionResult getsectionlist(MDefaultValue value)
+        {
+            return Ok(_inventory.getsectionlist(value.value));
+        }
 
         [HttpPost]
         [Route("api/inventory/getinventoryitem")]
@@ -105,10 +112,23 @@ namespace DeliveryRoomWatcher.Controllers
         }
 
         [HttpPost]
-        [Route("api/inventory/getmop")]
-        public ActionResult getmop()
+        [Route("api/inventory/getsupplier")]
+        public ActionResult getsupplier()
         {
-            return Ok(_inventory.getmop());
+            return Ok(_inventory.getsupplier());
+        }
+            
+        [HttpPost]
+        [Route("api/inventory/getprsuppliers")]
+        public ActionResult getprsuppliers(MDefaultValue value)
+        {
+            return Ok(_inventory.getprsuppliers(value.value));
+        }    
+        [HttpPost]
+        [Route("api/inventory/getitemforsuppliers")]
+        public ActionResult getitemforsuppliers(MDefaultValue value)
+        {
+            return Ok(_inventory.getitemforsuppliers(value.value));
         }
 
         [HttpPost]

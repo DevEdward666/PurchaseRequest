@@ -14,6 +14,7 @@ namespace DeliveryRoomWatcher.Repositories
 {
     public class InventoryRepo
     {
+        CompanyRepository _company = new CompanyRepository();
         public ResponseModel getlistofrequest(InventoryModel.listofrequest listofrequest)
         {
             using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
@@ -111,7 +112,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"select * from requestdashboardbydept where todept=@id and STATUS=@status",
+                        var data = con.Query($@"select * from prbydept where deptcode=@id and STATUS=@status",
                           listofrequest, transaction: tran
                             );
 
@@ -144,7 +145,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT rd.reqno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM requestdashboard rd JOIN requestsum rs ON rd.`reqno`=rs.`reqno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id' AND rd.`STATUS`='Approved'",
+                        var data = con.Query($@"SELECT rd.prno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM prbydept rd JOIN prheader rs ON rd.`prno`=rs.`prno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id'  AND rd.`STATUS`='Approved'",
                           listofrequest, transaction: tran
                             );
 
@@ -177,7 +178,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT rd.reqno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM requestdashboard rd JOIN requestsum rs ON rd.`reqno`=rs.`reqno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`   WHERE rs.`deptcode`='@id' AND rd.`STATUS`='Cancelled'",
+                        var data = con.Query($@"SELECT rd.prno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM prbydept rd JOIN prheader rs ON rd.`prno`=rs.`prno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id' AND rd.`STATUS`='Cancelled'",
                           listofrequest, transaction: tran
                             );
 
@@ -210,7 +211,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT rd.reqno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM requestdashboard rd JOIN requestsum rs ON rd.`reqno`=rs.`reqno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`   WHERE rs.`deptcode`='@id' AND rd.`STATUS`='For Approval'",
+                        var data = con.Query($@"SELECT rd.prno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM prbydept rd JOIN prheader rs ON rd.`prno`=rs.`prno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id' AND rd.`STATUS`='For Approval'",
                           listofrequest, transaction: tran
                             );
 
@@ -243,7 +244,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT rd.reqno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM requestdashboard rd JOIN requestsum rs ON rd.`reqno`=rs.`reqno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id' AND rd.`STATUS`='Issued'",
+                        var data = con.Query($@"SELECT rd.prno,rd.reqby,rs.`dateencoded`,rs.`apprbyname`,rs.`apprdate`,rd.`STATUS` FROM prbydept rd JOIN prheader rs ON rd.`prno`=rs.`prno` JOIN department dp ON rs.`deptcode`=dp.`deptcode`  WHERE rs.`deptcode`='@id' AND rd.`STATUS`='Issued'",
                           listofrequest, transaction: tran
                             );
 
@@ -309,7 +310,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT inv.stockcode,inv.stockdesc,inv.packdesc,inv.unitdesc FROM invmaster inv where active=@active and stockdesc LIKE concat('%',@stockdesc,'%')",
+                        var data = con.Query($@"SELECT inv.stockcode,inv.stockdesc,inv.packdesc,inv.unitdesc,inv.averagecost FROM invmaster inv where active=@active and stockdesc LIKE concat('%',@stockdesc,'%')",
                            inv,transaction: tran
                             );
 
@@ -364,6 +365,103 @@ namespace DeliveryRoomWatcher.Repositories
                 }
             }
 
+        }  
+        public ResponseModel getsectionlist(string deptcode)
+        {
+            using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+            {
+                con.Open();
+                using (var tran = con.BeginTransaction())
+                {
+                    try
+                    {
+
+                        var data = con.Query($@"SELECT * FROM deptsection WHERE deptcode=@deptcode",
+                           new { deptcode },transaction: tran
+                            );
+
+                        return new ResponseModel
+                        {
+                            success = true,
+                            data = data
+                        };
+                    }
+                    catch (Exception e)
+                    {
+                        return new ResponseModel
+                        {
+                            success = false,
+                            message = $@"External server error. {e.Message.ToString()}",
+                        };
+                    }
+
+                }
+            }
+
+        }
+        public ResponseModel getprsuppliers(string prno)
+        {
+            using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+            {
+                con.Open();
+                using (var tran = con.BeginTransaction())
+                {
+                    try
+                    {
+
+                        var data = con.Query($@"SELECT scode as value,sname as label FROM prsuppliers where prno=@prno",new { prno }, transaction: tran
+                            );
+
+                        return new ResponseModel
+                        {
+                            success = true,
+                            data = data
+                        };
+                    }
+                    catch (Exception e)
+                    {
+                        return new ResponseModel
+                        {
+                            success = false,
+                            message = $@"External server error. {e.Message.ToString()}",
+                        };
+                    }
+
+                }
+            }
+
+        } 
+        public ResponseModel getitemforsuppliers(string prno)
+        {
+            using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+            {
+                con.Open();
+                using (var tran = con.BeginTransaction())
+                {
+                    try
+                    {
+
+                        var data = con.Query($@"SELECT stockcode,stockdesc FROM prdetails WHERE prno=@prno",new { prno }, transaction: tran
+                            );
+
+                        return new ResponseModel
+                        {
+                            success = true,
+                            data = data
+                        };
+                    }
+                    catch (Exception e)
+                    {
+                        return new ResponseModel
+                        {
+                            success = false,
+                            message = $@"External server error. {e.Message.ToString()}",
+                        };
+                    }
+
+                }
+            }
+
         }
         public ResponseModel getPRPdf(string prno)
         {
@@ -374,6 +472,7 @@ namespace DeliveryRoomWatcher.Repositories
                     con.Open();
                     using (var tran = con.BeginTransaction())
                     {
+                        string brand_logo = _company.hospitalLogo().data.ToString();
                         string brand_name = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'hospname' limit 1;", null, transaction: tran);
                         string brand_phone = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'SMSNUMBER' limit 1;", null, transaction: tran);
                         string brand_address = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'hospadd' limit 1;", null, transaction: tran);
@@ -395,12 +494,12 @@ namespace DeliveryRoomWatcher.Repositories
                         //Bitmap qrCodeImage = qrCode.GetGraphic(35, Color.Black, Color.White, brand_logo_bitmap, 25);
                         //string qr_with_brand_logo = UseFileParser.BitmapToBase64(qrCodeImage);
 
-
+                        
                         pr_request.pritems = con.Query<ListofItemDetails>("select * from prdetails where prno=@prno;",
                              new { prno }, transaction: tran).ToList();
 
 
-                        var pr_pdf = HtmltoPdf.PRHtmlPdf.geratePRPdf(brand_name, brand_address, brand_phone, brand_email, pr_request);
+                        var pr_pdf = HtmltoPdf.PRHtmlPdf.geratePRPdf(brand_name, brand_logo, brand_address, brand_phone, brand_email, pr_request);
 
 
 
@@ -450,7 +549,7 @@ namespace DeliveryRoomWatcher.Repositories
                                  {
                                   rdl.prno = prno;
                                   string sql_add_dtls = $@"INSERT INTO prdetails SET prno = @prno,lineno = @lineno,linestatus = 'O',deptcode = @deptcode,sectioncode = '',stockcode = @stockcode,
-                                    stockdesc = @stockdesc,prqty = @prqty,prprice = @prprice,unitdesc = @unitdesc,itemremarks = @itemremarks,docdate = NOW()";
+                                    stockdesc = @stockdesc,prqty = @prqty,prprice = @averagecost,unitdesc = @unitdesc,itemremarks = @itemremarks,docdate = NOW()";
 
                                         int insert_prdetails_result = con.Execute(sql_add_dtls, rdl, transaction: tran);
                                         if (insert_prdetails_result <= 0)
@@ -458,21 +557,52 @@ namespace DeliveryRoomWatcher.Repositories
                                     tran.Rollback();
                                     return new ResponseModel
                                             {
-                                                   
-                                    success = false,
-                                             message = "Database error has occured. No affected rows"
+                                                success = false,
+                                                message = "Database error has occured. No affected rows"
                                             };
                                         }
                                  }
                             if (i > 0)
                             {
+                                int supp = requests.lisrequesttsuppliers.Count;
 
-                                tran.Commit();
-                                return new ResponseModel
+                                foreach (var rdl in requests.lisrequesttsuppliers)
                                 {
-                                    success = true,
-                                    message = $@"Your Purchase Request has been Added sucessfully,Purchase Request No.{requests.prno}"
-                                };
+                                    rdl.prno = prno;
+                                    string sql_add_suppliers = $@"INSERT INTO prsuppliers SET prno = @prno,scode = @value,sname = @label,dateencoded = NOW()";
+
+                                    int insert_prdetails_suppliers_result = con.Execute(sql_add_suppliers, rdl, transaction: tran);
+                                    if (insert_prdetails_suppliers_result <= 0)
+                                    {
+                                        tran.Rollback();
+                                        return new ResponseModel
+                                        {
+
+                                            success = false,
+                                            message = "Database error has occured. No affected rows"
+                                        };
+                                    }
+                                }
+                                if (supp > 0)
+                                {
+                                    tran.Commit();
+                                    return new ResponseModel
+                                    {
+                                        success = true,
+                                        message = $@"Your Purchase Request has been Added sucessfully,Purchase Request No.{requests.prno}"
+                                    };
+                                }
+                                else
+                                {
+                                    tran.Rollback();
+                                    return new ResponseModel
+                                    {
+
+                                        success = false,
+                                        message = "Database error has occured. No affected rows"
+                                    };
+
+                                }
                             }
                             else
                             {
@@ -534,7 +664,7 @@ namespace DeliveryRoomWatcher.Repositories
                             return new ResponseModel
                             {
                                 success = false,
-                                message = "User Already Exist"
+                                message = "Something Went Wrong"
                             };
                         }
                     }
@@ -576,7 +706,7 @@ namespace DeliveryRoomWatcher.Repositories
                             return new ResponseModel
                             {
                                 success = false,
-                                message = "User Already Exist"
+                                message = "Something Went Wrong"
                             };
                         }
                     }
@@ -594,7 +724,7 @@ namespace DeliveryRoomWatcher.Repositories
         }
             
             
-       public ResponseModel getmop()
+       public ResponseModel getsupplier()
         {
             using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
             {
@@ -604,7 +734,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT mopcode,mopdesc FROM mopref ORDER BY mopkey",
+                        var data = con.Query($@"SELECT scode,sname FROM supplier ORDER BY sname",
                            transaction: tran
                             );
 
@@ -669,7 +799,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT COUNT(CASE WHEN issueno IS NOT NULL THEN 'Issued' END) issued, COUNT(CASE  WHEN apprbycode IS NOT NULL AND cancelledbycode IS NULL  THEN 'Approved' END) approved,COUNT(CASE WHEN cancelledbycode IS NOT NULL THEN 'Cancelled' END) cancelled,COUNT(CASE WHEN apprbycode IS NULL THEN 'For Approval' END) forapproval FROM requestsum WHERE todept=@id",
+                        var data = con.Query($@"SELECT  COUNT(CASE  WHEN apprbycode IS NOT NULL AND cancelledbycode IS NULL  THEN 'Approved' END) approved,COUNT(CASE WHEN cancelledbycode IS NOT NULL THEN 'Cancelled' END) cancelled,COUNT(CASE WHEN apprbycode IS NULL THEN 'For Approval' END) forapproval FROM prheader WHERE deptcode=@id",
                             listofrequest,transaction: tran
                             );
 
@@ -702,7 +832,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT stockcode,stockdesc,unitdesc,prqty,itemremarks FROM prdetails where prno=@reqno",
+                        var data = con.Query($@"SELECT stockcode,stockdesc,unitdesc,prqty,itemremarks,prprice FROM prdetails where prno=@reqno",
                            singleRequest, transaction: tran);
 
 
