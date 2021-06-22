@@ -34,7 +34,14 @@ namespace DeliveryRoomWatcher.Controllers
         public ActionResult InsertNewRequest(mdlRequestHeader requests)
         {
             return Ok(_inventory.InsertNewRequest(requests));
-        } 
+        }
+
+        [HttpPost]
+        [Route("api/inventory/getPRPdf")]
+        public IActionResult getPRPdf(MDefaultValue payload)
+        {
+            return Ok(_inventory.getPRPdf(payload.value));
+        }
         [HttpPost]
         [Route("api/inventory/getlistofrequest")]
         public ActionResult getlistofrequest(InventoryModel.listofrequest listofrequest)
@@ -62,9 +69,9 @@ namespace DeliveryRoomWatcher.Controllers
 
         [HttpPost]
         [Route("api/inventory/getinventoryitem")]
-        public ActionResult getinventoryitem()
+        public ActionResult getinventoryitem(mdlInventory.invmaster inv)
         {
-            return Ok(_inventory.getinventoryitem());
+            return Ok(_inventory.getinventoryitem(inv));
         }
 
 

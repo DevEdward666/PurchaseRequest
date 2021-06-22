@@ -153,7 +153,7 @@ namespace DeliveryRoomWatcher.Repositories
                     {
     
                         var data = con.QuerySingle(
-                                        $@"SELECT u.username,CONCAT(emp.`lastname`,',',emp.firstname) AS empname,emp.deptcode,dp.deptname FROM usermaster u  JOIN userpermission up ON up.`username`=u.`username` JOIN usermodule um ON um.`modid`=up.`modid` JOIN empmast emp ON emp.`idno`=u.`empidno` JOIN department dp ON dp.deptcode = emp.deptcode  where u.username = @username limit 1
+                                        $@"SELECT u.username,CONCAT(emp.`lastname`,',',emp.firstname) AS empname,emp.deptcode,dp.deptname,emp.position FROM usermaster u  JOIN userpermission up ON up.`username`=u.`username` JOIN usermodule um ON um.`modid`=up.`modid` JOIN empmast emp ON emp.`idno`=u.`empidno` JOIN department dp ON dp.deptcode = emp.deptcode  where u.username = @username limit 1
                                         ",
                           username, transaction: tran
                             );

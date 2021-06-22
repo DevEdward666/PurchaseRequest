@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 
 namespace DeliveryRoomWatcher.Models
 {
-    public class mdlRequestHeader
+    public class ListOfItems
     {
         public string prno { get; set; }
         public string deptcode { get; set; }
+        public string deptname { get; set; }
         public string sectioncode { get; set; }
         public string reqdate { get; set; }
         public string reqby { get; set; }
@@ -29,21 +30,9 @@ namespace DeliveryRoomWatcher.Models
         public string datecancelled { get; set; }
         public string reqremarks { get; set; }
         public string encodedby { get; set; }
-        public List<mdlRequestdtls> lisrequesttdtls { get; set; }
-    }
-    public class mdlRequestdtls
-    {
-        public string prno { get; set; }
-        public short lineno { get; set; }
-        public string linestatus { get; set; }
-        public string deptcode { get; set; }
-        public string sectioncode { get; set; }
-        public string stockcode { get; set; }
-        public string stockdesc { get; set; }
-        public string prqty { get; set; }
-        public string unitdesc { get; set; }
-        public string prprice { get; set; }
-        public string itemtrantype { get; set; }
-        public string itemremarks { get; set; }
+        public float total_price { get; set; }
+
+      public List<ListofItemDetails> pritems { get; set; }
+
     }
 }

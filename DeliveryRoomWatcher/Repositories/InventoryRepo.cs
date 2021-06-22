@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using DeliveryRoomWatcher.Config;
+using DeliveryRoomWatcher.Hooks;
 using DeliveryRoomWatcher.Models;
 using DeliveryRoomWatcher.Models.Common;
 using MySql.Data.MySqlClient;
@@ -23,7 +24,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"select * from requestdashboardbydept where todept=@id",
+                        var data = con.Query($@"select * from prbydept where deptcode=@id",
                           listofrequest, transaction: tran
                             );
 
@@ -298,7 +299,7 @@ namespace DeliveryRoomWatcher.Repositories
             }
 
         }
-        public ResponseModel getinventoryitem()
+        public ResponseModel getinventoryitem(mdlInventory.invmaster inv)
         {
             using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
             {
@@ -308,8 +309,8 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT inv.stockcode,inv.stockdesc,inv.packdesc,inv.unitdesc FROM invmaster inv WHERE inv.invitem='N'",
-                           transaction: tran
+                        var data = con.Query($@"SELECT inv.stockcode,inv.stockdesc,inv.packdesc,inv.unitdesc FROM invmaster inv where active=@active and stockdesc LIKE concat('%',@stockdesc,'%')",
+                           inv,transaction: tran
                             );
 
                         return new ResponseModel
@@ -364,6 +365,65 @@ namespace DeliveryRoomWatcher.Repositories
             }
 
         }
+        public ResponseModel getPRPdf(string prno)
+        {
+            try
+            {
+                using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+                {
+                    con.Open();
+                    using (var tran = con.BeginTransaction())
+                    {
+                        string brand_name = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'hospname' limit 1;", null, transaction: tran);
+                        string brand_phone = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'SMSNUMBER' limit 1;", null, transaction: tran);
+                        string brand_address = con.QuerySingleOrDefault<string>("SELECT datval FROM defvalues WHERE remarks = 'hospadd' limit 1;", null, transaction: tran);
+                        string brand_email = "-";
+
+
+
+                        ListOfItems pr_request = con.QuerySingle<ListOfItems>($@"
+                                       SELECT pr.*,dept.deptname FROM `prheader` pr JOIN department dept ON pr.deptcode=dept.deptcode WHERE prno=@prno LIMIT 1; 
+                            ", new { prno }, transaction: tran);
+
+
+                        //QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                        //QRCodeData qrCodeData = qrGenerator.CreateQrCode(hash_req_pk, QRCodeGenerator.ECCLevel.Q);
+                        //QRCode qrCode = new QRCode(qrCodeData);
+
+
+                        //var brand_logo_bitmap = UseFileParser.Base64StringToBitmap(brand_logo);
+                        //Bitmap qrCodeImage = qrCode.GetGraphic(35, Color.Black, Color.White, brand_logo_bitmap, 25);
+                        //string qr_with_brand_logo = UseFileParser.BitmapToBase64(qrCodeImage);
+
+
+                        pr_request.pritems = con.Query<ListofItemDetails>("select * from prdetails where prno=@prno;",
+                             new { prno }, transaction: tran).ToList();
+
+
+                        var pr_pdf = HtmltoPdf.PRHtmlPdf.geratePRPdf(brand_name, brand_address, brand_phone, brand_email, pr_request);
+
+
+
+                        return new ResponseModel
+                        {
+                            success = true,
+                            data = Convert.ToBase64String(pr_pdf)
+                        };
+
+                    }
+                }
+
+            }
+            catch (Exception err)
+            {
+
+                return new ResponseModel
+                {
+                    success = false,
+                    message = err.Message
+                };
+            }
+        }
         public ResponseModel InsertNewRequest(mdlRequestHeader requests)
         {
             using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
@@ -373,12 +433,12 @@ namespace DeliveryRoomWatcher.Repositories
                 {
                     try
                     {
-                        string reqno = con.QuerySingle<string>($@"SELECT CASE WHEN MAX(reqno)+1  IS NULL THEN 1 ELSE  MAX(reqno)+1  end reqno FROM requestsum", null, transaction: tran);
-                        requests.reqno = reqno;
-                        string sql_insert_request_header = $@"INSERT INTO requestsum SET reqno=@reqno ,deptcode=@deptcode,sectioncode='',reqdate=NOW(),reqby=@reqby,apprbycode=NULL,
-                        apprbyname=NULL,apprdate=NULL,todept=@todept,tosection='',issueno=NULL,reqtype='O',reqstatus='O',trantype='T',
-                        headapprovebycode=NULL,headapprovebyname=NULL,headdateapprove=NULL,cancelledbycode=NULL,cancelledbyname=NULL,
-                        datecancelled=NULL,reqremarks=@reqremarks,encodedby='pgh',dateencoded=NOW(),tsreference=NOW()";
+                        string prno = con.QuerySingle<string>($@"SELECT NextPRNo() as prno", null, transaction: tran);
+                        requests.prno = prno;
+                        string sql_insert_request_header = $@"INSERT INTO prheader SET prno = @prno,deptcode = @deptcode,sectioncode = '',reqdate = NOW(),reqby = @reqby,reqbyposition = '',apprbycode = NULL,
+                        apprbyname = NULL,apprdate = NULL,reqtype = 'O',reqstatus = 'O',trantype = 'T',
+                        headapprovebycode = NULL,headapprovebyname = NULL,headdateapprove = NULL,cancelledbycode = NULL,cancelledbyname = NULL,datecancelled = NULL,reqremarks = @reqremarks,encodedby = @reqby,
+                        dateencoded = NOW(),tsreference = NOW()";
                         int insert_user_information = con.Execute(sql_insert_request_header, requests, transaction: tran);
                         
                     
@@ -388,10 +448,9 @@ namespace DeliveryRoomWatcher.Repositories
 
                             foreach (var rdl in requests.lisrequesttdtls)
                                  {
-                                  rdl.reqno = reqno;
-                                  string sql_add_dtls = $@"INSERT INTO requestdtls SET reqno = @reqno,lineno = @lineno,linestatus = 'O',deptcode = @deptcode ,sectioncode = ''
-                                                                  ,todept = @todept,tosection = '',stockcode = @stockcode,stockdesc = @stockdesc,reqqty = @reqqty,unitdesc = @unitdesc,packed = 'N',
-                                                                  issueqty = NULL,itemtrantype = 'I',itemremarks = @itemremarks,docdate = NOW()";
+                                  rdl.prno = prno;
+                                  string sql_add_dtls = $@"INSERT INTO prdetails SET prno = @prno,lineno = @lineno,linestatus = 'O',deptcode = @deptcode,sectioncode = '',stockcode = @stockcode,
+                                    stockdesc = @stockdesc,prqty = @prqty,prprice = @prprice,unitdesc = @unitdesc,itemremarks = @itemremarks,docdate = NOW()";
 
                                         int insert_prdetails_result = con.Execute(sql_add_dtls, rdl, transaction: tran);
                                         if (insert_prdetails_result <= 0)
@@ -412,7 +471,7 @@ namespace DeliveryRoomWatcher.Repositories
                                 return new ResponseModel
                                 {
                                     success = true,
-                                    message = $@"Your Request has been Added sucessfully, Request No.{requests.reqno}"
+                                    message = $@"Your Purchase Request has been Added sucessfully,Purchase Request No.{requests.prno}"
                                 };
                             }
                             else
@@ -459,7 +518,7 @@ namespace DeliveryRoomWatcher.Repositories
                 {
                     try
                     {
-                        string sql_insert_request_header = $@"UPDATE requestsum SET apprbycode=@apprbycode,apprbyname=@apprbyname,apprdate=NOW() WHERE reqno=@reqno";
+                        string sql_insert_request_header = $@"UPDATE prheader SET apprbycode=@apprbycode,apprbyname=@apprbyname,apprdate=NOW() WHERE prno=@reqno";
                         int insert_user_information = con.Execute(sql_insert_request_header, requests, transaction: tran);
                         if (insert_user_information > 0)
                         {
@@ -501,7 +560,7 @@ namespace DeliveryRoomWatcher.Repositories
                 {
                     try
                     {
-                        string sql_insert_request_header = $@"UPDATE requestsum SET cancelledbycode=@cancelledbycode,cancelledbyname=@cancelledbyname,datecancelled=NOW() WHERE reqno=@reqno";
+                        string sql_insert_request_header = $@"UPDATE prheader SET cancelledbycode=@cancelledbycode,cancelledbyname=@cancelledbyname,datecancelled=NOW() WHERE prno=@reqno";
                         int insert_user_information = con.Execute(sql_insert_request_header, requests, transaction: tran);
                         if (insert_user_information > 0)
                         {
@@ -578,7 +637,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT reqno,todept,reqby,CASE WHEN issueno IS NOT NULL THEN 'Issued'  WHEN apprbycode IS NOT NULL AND cancelledbycode IS NULL  THEN 'Approved' WHEN cancelledbycode IS NOT NULL THEN 'Cancelled' ELSE 'For Approval' END reqstatus,reqremarks from requestsum WHERE reqno=@reqno",
+                        var data = con.Query($@"SELECT prno,deptcode,reqby,CASE  WHEN apprbycode IS NOT NULL AND cancelledbycode IS NULL  THEN 'Approved' WHEN cancelledbycode IS NOT NULL THEN 'Cancelled' ELSE 'For Approval' END reqstatus,reqremarks FROM prheader WHERE prno=@reqno",
                            singleRequest,transaction: tran
                             );
 
@@ -643,7 +702,7 @@ namespace DeliveryRoomWatcher.Repositories
                     try
                     {
 
-                        var data = con.Query($@"SELECT stockcode,stockdesc,unitdesc,reqqty,issueqty,itemremarks FROM requestdtls where reqno=@reqno",
+                        var data = con.Query($@"SELECT stockcode,stockdesc,unitdesc,prqty,itemremarks FROM prdetails where prno=@reqno",
                            singleRequest, transaction: tran);
 
 
