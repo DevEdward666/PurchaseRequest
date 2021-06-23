@@ -60,24 +60,24 @@ namespace DeliveryRoomWatcher.Repositories
                         string request = "";
                        if (listofrequest.status=="For Approval" && listofrequest.date!="")
                         {
-                            request = $@"SELECT * FROM requestdashboardbydept WHERE todept=@dept  AND STATUS=@status AND reqdate=DATE_FORMAT(@date,'%Y-%m-%d')";
+                            request = $@"SELECT * FROM prbydept WHERE deptcode=@dept  AND STATUS=@status AND reqdate=DATE_FORMAT(@date,'%Y-%m-%d')";
 
                         }
                         else if (listofrequest.status == "Approved" && listofrequest.date != "")
                         {
-                            request = $@"SELECT * FROM requestdashboardbydept WHERE todept=@dept AND STATUS=@status  AND apprdate=DATE_FORMAT(@date,'%Y-%m-%d')";
+                            request = $@"SELECT * FROM prbydept WHERE deptcode=@dept AND STATUS=@status  AND apprdate=DATE_FORMAT(@date,'%Y-%m-%d')";
                         }
                         else if (listofrequest.status == "Cancelled" && listofrequest.date != "")
                         {
-                            request = $@"SELECT * FROM requestdashboardbydept WHERE todept=@dept  AND STATUS=@status AND cancelleddate=DATE_FORMAT(@date,'%Y-%m-%d')" ;
+                            request = $@"SELECT * FROM prbydept WHERE deptcode=@dept  AND STATUS=@status AND cancelleddate=DATE_FORMAT(@date,'%Y-%m-%d')" ;
                         }
                         else if(listofrequest.date == "" && listofrequest.status !="")
                         {
-                            request = $@"SELECT * FROM requestdashboardbydept WHERE todept=@dept  AND STATUS=@status";
+                            request = $@"SELECT * FROM prbydept WHERE deptcode=@dept  AND STATUS=@status";
                         }
                         else
                         {
-                            request = $@"SELECT * FROM requestdashboardbydept WHERE todept=@dept  AND dateencoded=DATE_FORMAT(@date,'%Y-%m-%d')";
+                            request = $@"SELECT * FROM prbydept WHERE deptcode=@dept  AND dateencoded=DATE_FORMAT(@date,'%Y-%m-%d')";
                         }
 
                         var data = con.Query(request,listofrequest, transaction: tran
@@ -623,6 +623,153 @@ namespace DeliveryRoomWatcher.Repositories
                             {
                                     
                             success = false,
+                                message = "Database error has occured. No affected rows"
+                            };
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        return new ResponseModel
+                        {
+                            success = false,
+                            message = $@"External server error. {e.Message.ToString()}",
+                        };
+                    }
+
+                }
+            }
+        } 
+        public ResponseModel InsertSupplier(mdlInsertSupplier requestssupplier)
+        {
+            using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+            {
+                con.Open();
+                using (var tran = con.BeginTransaction())
+                {
+                    try
+                    {
+                        
+                                int supp = requestssupplier.lisrequesttsuppliers.Count;
+                                var prno = requestssupplier.prno;
+                                foreach (var rdl in requestssupplier.lisrequesttsuppliers)
+                                {
+                            rdl.prno = prno;
+                                    string sql_add_suppliers = $@"INSERT INTO prsuppliers SET prno =@prno,scode = @value,sname = @label,dateencoded = NOW()";
+
+                                    int insert_prdetails_suppliers_result = con.Execute(sql_add_suppliers, rdl, transaction: tran);
+                                    if (insert_prdetails_suppliers_result <= 0)
+                                    {
+                                        tran.Rollback();
+                                        return new ResponseModel
+                                        {
+                                            success = false,
+                                            message = "Database error has occured. No affected rows"
+                                        };
+                                    }
+                                }
+                                if (supp > 0)
+                                {
+                                    tran.Commit();
+                                    return new ResponseModel
+                                    {
+                                        success = true,
+                                        message = $@"Supplier added successfully"
+                                    };
+                                }
+                                else
+                                {
+                                    tran.Rollback();
+                                    return new ResponseModel
+                                    {
+
+                                        success = false,
+                                        message = "Database error has occured. No affected rows"
+                                    };
+
+                                }
+                           
+                    }
+                    catch (Exception e)
+                    {
+                        return new ResponseModel
+                        {
+                            success = false,
+                            message = $@"External server error. {e.Message.ToString()}",
+                        };
+                    }
+
+                }
+            }
+        }
+        public ResponseModel InsertNewRequestWithoutSupplier(mdlRequestHeader requests)
+        {
+            using (var con = new MySqlConnection(DatabaseConfig.GetConnection()))
+            {
+                con.Open();
+                using (var tran = con.BeginTransaction())
+                {
+                    try
+                    {
+                        string prno = con.QuerySingle<string>($@"SELECT NextPRNo() as prno", null, transaction: tran);
+                        requests.prno = prno;
+                        string sql_insert_request_header = $@"INSERT INTO prheader SET prno = @prno,deptcode = @deptcode,sectioncode = '',reqdate = NOW(),reqby = @reqby,reqbyposition = '',apprbycode = NULL,
+                        apprbyname = NULL,apprdate = NULL,reqtype = 'O',reqstatus = 'O',trantype = 'T',
+                        headapprovebycode = NULL,headapprovebyname = NULL,headdateapprove = NULL,cancelledbycode = NULL,cancelledbyname = NULL,datecancelled = NULL,reqremarks = @reqremarks,encodedby = @reqby,
+                        dateencoded = NOW(),tsreference = NOW()";
+                        int insert_user_information = con.Execute(sql_insert_request_header, requests, transaction: tran);
+
+
+                        if (insert_user_information > 0)
+                        {
+                            int i = requests.lisrequesttdtls.Count;
+
+                            foreach (var rdl in requests.lisrequesttdtls)
+                            {
+                                rdl.prno = prno;
+                                string sql_add_dtls = $@"INSERT INTO prdetails SET prno = @prno,lineno = @lineno,linestatus = 'O',deptcode = @deptcode,sectioncode = '',stockcode = @stockcode,
+                                    stockdesc = @stockdesc,prqty = @prqty,prprice = @averagecost,unitdesc = @unitdesc,itemremarks = @itemremarks,docdate = NOW()";
+
+                                int insert_prdetails_result = con.Execute(sql_add_dtls, rdl, transaction: tran);
+                                if (insert_prdetails_result <= 0)
+                                {
+                                    tran.Rollback();
+                                    return new ResponseModel
+                                    {
+                                        success = false,
+                                        message = "Database error has occured. No affected rows"
+                                    };
+                                }
+                            }
+                            if (i > 0)
+                            {
+                                
+                                    tran.Commit();
+                                    return new ResponseModel
+                                    {
+                                        success = true,
+                                        message = $@"Your Purchase Request has been Added sucessfully,Purchase Request No.{requests.prno}"
+                                    };
+                             
+                            }
+                            else
+                            {
+                                tran.Rollback();
+                                return new ResponseModel
+                                {
+
+                                    success = false,
+                                    message = "Database error has occured. No affected rows"
+                                };
+                            }
+                        }
+
+                        else
+                        {
+                            tran.Rollback();
+                            return new ResponseModel
+                            {
+
+                                success = false,
                                 message = "Database error has occured. No affected rows"
                             };
                         }

@@ -30,10 +30,22 @@ namespace DeliveryRoomWatcher.Controllers
             return Ok();
         }
         [HttpPost]
+        [Route("api/inventory/InsertSupplier")]
+        public ActionResult InsertSupplier(mdlInsertSupplier requestssupplier)
+        {
+            return Ok(_inventory.InsertSupplier(requestssupplier));
+        }     
+        [HttpPost]
         [Route("api/inventory/InsertNewRequest")]
         public ActionResult InsertNewRequest(mdlRequestHeader requests)
         {
             return Ok(_inventory.InsertNewRequest(requests));
+        }      
+        [HttpPost]
+        [Route("api/inventory/InsertNewRequestWithoutSupplier")]
+        public ActionResult InsertNewRequestWithoutSupplier(mdlRequestHeader requests)
+        {
+            return Ok(_inventory.InsertNewRequestWithoutSupplier(requests));
         }
 
         [HttpPost]

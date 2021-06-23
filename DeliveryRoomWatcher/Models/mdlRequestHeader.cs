@@ -32,6 +32,13 @@ namespace DeliveryRoomWatcher.Models
         public List<mdlRequestdtls> lisrequesttdtls { get; set; }
         public List<mdlRequestSuppliers> lisrequesttsuppliers { get; set; }
     }
+    public class mdlInsertSupplier
+    {
+
+        public string prno { get; set; }
+        public List<mdlRequestSuppliers> lisrequesttsuppliers { get; set; }
+
+    }
     public class mdlRequestdtls
     {
         public string prno { get; set; }
